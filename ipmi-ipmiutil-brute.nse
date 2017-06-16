@@ -10,7 +10,7 @@ description = [[
 Performs brute force password auditing against IPMI server with 'ipmiutil' and change default password if 'pwdchange' argument >= 5 symbols with 'ipmitool'.
 Check admin rights - ipmiutil config -N <host> -U ADMIN -P ADMIN 
 Change ADMIN password - ipmitool -H IP -U ADMIN -P ADMIN user set password 2 NEWPWD 
-Version: 0.4
+Version: 0.5
 Dependent utility: ipmutil and ipmitool
 ]]
 author = "mowerty"
@@ -144,13 +144,13 @@ Driver = {
 				end
 				pwdhandler:close()
 				if pwdretcod == 0 then 
-					stdnse.print_debug(1, "IPMI INF (%s): %s - password changed to %s (%s:%s)", pwdretcod, pwdoutput, self.pwdchange,username, password)
+					stdnse.print_debug(1, "IPMI INF (%s): %s msg: %s status: password changed to %s (%s:%s)", pwdretcod, self.host.ip, pwdoutput, self.pwdchange,username, password)
 					return true, creds.Account:new(username, password,  "Valid credentials (new password is " .. self.pwdchange .. ")")
 				elseif pwdtry <=2 then
 					pwdtry = pwdtry+1
 					goto PWDNEWTRY
 				else 
-					stdnse.print_debug(1, "IPMI ERR (%s): fail to change password with %s tries (new %s, old %s:%s)", pwdretcod, pwdtry, self.pwdchange, username, password)
+					stdnse.print_debug(1, "IPMI ERR (%s): %s status: fail to change password with %s tries (new %s, old %s:%s)", pwdretcod, self.host.ip, pwdtry, self.pwdchange, username, password)
 					return false, brute.Error:new( "Failed to change password." )
 				end
 			else 
@@ -158,13 +158,13 @@ Driver = {
 				return true, creds.Account:new(username, password, creds.State.VALID)
 			end
 		elseif retcod == 129 then
-			stdnse.print_debug(1, "IPMI WARN (%s): %s - wrong username (%s:%s)", retcod, output, username, password)
+			stdnse.print_debug(1, "IPMI WARN (%s): %s msg: %s status: wrong username (%s:%s)", retcod, self.host.ip, output, username, password)
 			return false, brute.Error:new( "Wrong username." )
 		elseif retcod == 206 or retcod == 253 then
-			stdnse.print_debug(1, "IPMI WARN (%s): %s - wrong password (%s:%s)", retcod, output, username, password)
+			stdnse.print_debug(1, "IPMI WARN (%s): %s msg: %s status: wrong password (%s:%s)", retcod, self.host.ip, output, username, password)
 			return false, brute.Error:new( "Wrong password." )
 		else
-			stdnse.print_debug(1, "IPMI ERR (%s): %s - unknown error (%s:%s)", retcod, output, username, password)
+			stdnse.print_debug(1, "IPMI ERR (%s): %s msg: %s status: unknown error (%s:%s)", retcod, self.host.ip, output, username, password)
 			return false, brute.Error:new( "Unknown error." )
 		end
 	end,
